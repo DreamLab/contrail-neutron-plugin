@@ -14,6 +14,7 @@ from neutron.extensions import loadbalancer
 from neutron.extensions.loadbalancer import LoadBalancerPluginBase
 from vnc_api.vnc_api import VncApi
 
+from utils import TooManyHealthMonitors
 import loadbalancer_healthmonitor
 import loadbalancer_member
 import loadbalancer_pool
@@ -154,6 +155,9 @@ class LoadBalancerPluginDb(LoadBalancerPluginBase):
             pool = self._api.loadbalancer_pool_read(id=pool_id)
         except NoIdError:
             raise loadbalancer.PoolNotFound(pool_id=pool_id)
+
+        if len((pool.get_loadbalancer_healthmonitor_refs() or []))>0:
+            raise TooManyHealthMonitors()
 
         try:
             monitor = self._api.loadbalancer_healthmonitor_read(id=m['id'])
