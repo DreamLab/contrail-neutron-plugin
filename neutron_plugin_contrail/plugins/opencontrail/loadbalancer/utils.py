@@ -1,6 +1,8 @@
 from neutron.common import exceptions as n_exc
 from cfgm_common import exceptions as vnc_exc
 
+class TooManyHealthMonitors(n_exc.NeutronException):
+    message = _("Only one HealthMonitor per Pool is allowed")
 
 def get_subnet_network_id(client, subnet_id):
     try:
