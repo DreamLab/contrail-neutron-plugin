@@ -12,7 +12,9 @@ from cfgm_common import exceptions as vnc_exc
 from neutron.common import exceptions as n_exc
 from neutron.extensions import loadbalancer
 from neutron.extensions.loadbalancer import LoadBalancerPluginBase
-from vnc_api.vnc_api import VncApi
+from vnc_api.vnc_api import VncApi, ServiceApplianceSet
+from neutron.db import servicetype_db as sdb
+from neutron.plugins.common import constants
 
 from utils import TooManyHealthMonitors
 import loadbalancer_healthmonitor
@@ -81,6 +83,31 @@ class LoadBalancerPluginDb(LoadBalancerPluginBase):
         self._monitor_manager = \
             loadbalancer_healthmonitor.LoadbalancerHealthmonitorManager(
                 self._api)
+        self._install_drivers()
+
+    def _install_drivers(self):
+        """Puts plugin-drivers specified in configuration in DB."""
+
+        service_type_manager = sdb.ServiceTypeManager.get_instance()
+        providers = (service_type_manager.
+                     get_service_providers(
+                         None,
+                         filters={'service_type': [constants.LOADBALANCER]})
+                    )
+        default_gsc_name = "default-global-system-config"
+        default_gsc_fq_name = [default_gsc_name]
+        gsc_obj = self._api.global_system_config_read(fq_name=default_gsc_fq_name)
+
+        for provider in providers:
+
+            sa_set_fq_name = [default_gsc_name, provider['name']]
+            sa_set_obj = ServiceApplianceSet(provider['name'], gsc_obj)
+            sa_set_obj.set_service_appliance_driver(provider['driver'])
+
+            try:
+                self._api.service_appliance_set_update(sa_set_obj)
+            except vnc_exc.NoIdError:
+                sa_set_uuid = self._api.service_appliance_set_create(sa_set_obj)
 
     def get_api_client(self):
         return self._api
