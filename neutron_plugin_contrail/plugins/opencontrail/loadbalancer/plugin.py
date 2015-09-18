@@ -4,7 +4,7 @@
 from loadbalancer_db import LoadBalancerPluginDb
 
 class LoadBalancerPlugin(LoadBalancerPluginDb):
-    supported_extension_aliases = ["lbaas"]
+    supported_extension_aliases = ["lbaas", "service-type"]
 
     def __init__(self):
         super(LoadBalancerPlugin, self).__init__()
